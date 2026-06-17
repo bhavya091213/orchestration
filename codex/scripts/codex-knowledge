@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+python3 "$HOME/.codex/skills/local-knowledge-retrieval/scripts/knowledge_index.py" "$@"

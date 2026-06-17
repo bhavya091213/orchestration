@@ -1,0 +1,7 @@
+interface:
+  display_name: "JSON Canvas"
+  short_description: "Create and edit Obsidian canvas files"
+  brand_color: "#8B5CF6"
+  default_prompt: "Use $json-canvas to create or edit an Obsidian canvas."
+policy:
+  allow_implicit_invocation: true

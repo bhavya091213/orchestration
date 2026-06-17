@@ -1,0 +1,20 @@
+{
+  "name": "orchestration-skills",
+  "version": "0.1.0",
+  "description": "Claude Code orchestration skills and agents for hub-and-spoke planning, research, deep understanding, adversarial review, human-in-the-loop planning, and token-efficient execution.",
+  "author": {
+    "name": "Bhavya Patel"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "agents",
+    "skills",
+    "orchestration",
+    "research",
+    "planning",
+    "hooks",
+    "token-efficiency",
+    "obsidian"
+  ]
+}

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Local Knowledge Retrieval"
+  short_description: "Search repo vaults and docs without context stuffing"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $local-knowledge-retrieval to retrieve only the relevant repo knowledge for this task."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Adversarial Pair Review"
+  short_description: "Steelman plus skeptic review workflow"
+  brand_color: "#DC2626"
+  default_prompt: "Use $adversarial-pair-review to challenge this decision with a steelman and skeptic pass."
+policy:
+  allow_implicit_invocation: true

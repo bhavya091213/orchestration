@@ -1,0 +1,7 @@
+interface:
+  display_name: "Human Loop Planner"
+  short_description: "Plan with explicit user decision gates"
+  brand_color: "#0F766E"
+  default_prompt: "Use $human-loop-planner to plan this with clear user approval gates."
+policy:
+  allow_implicit_invocation: true

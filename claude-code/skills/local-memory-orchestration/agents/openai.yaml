@@ -1,0 +1,7 @@
+interface:
+  display_name: "Local Memory Orchestration"
+  short_description: "Obsidian vault plus local retrieval setup"
+  brand_color: "#4F46E5"
+  default_prompt: "Use $local-memory-orchestration to configure and use repo-local memory for this task."
+policy:
+  allow_implicit_invocation: true

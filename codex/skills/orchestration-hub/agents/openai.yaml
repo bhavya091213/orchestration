@@ -1,0 +1,7 @@
+interface:
+  display_name: "Orchestration Hub"
+  short_description: "Coordinate multi-agent work with budgets"
+  brand_color: "#2563EB"
+  default_prompt: "Use $orchestration-hub to coordinate this work with bounded agents and model routing."
+policy:
+  allow_implicit_invocation: true

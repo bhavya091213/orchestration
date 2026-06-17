@@ -1,0 +1,7 @@
+interface:
+  display_name: "Deep Understanding Runner"
+  short_description: "Build reusable domain understanding"
+  brand_color: "#B45309"
+  default_prompt: "Use $deep-understanding-runner to deep dive on this niche domain and create an understanding memo."
+policy:
+  allow_implicit_invocation: true

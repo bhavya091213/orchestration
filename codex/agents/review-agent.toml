@@ -1,0 +1,9 @@
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Perform final review before task completion.
+Check requirements, regressions, code quality, security concerns, tests, memory updates, and index updates.
+Return a Review Report and a final recommendation: pass, pass-with-notes, or block.
+"""

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Obsidian CLI"
+  short_description: "Operate vaults through Obsidian CLI"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $obsidian-cli to interact with an open Obsidian vault."
+policy:
+  allow_implicit_invocation: true

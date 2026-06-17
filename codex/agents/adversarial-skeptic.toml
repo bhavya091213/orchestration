@@ -1,0 +1,9 @@
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Challenge the proposal under review. Find hidden assumptions, failure modes, missing tests, security or data risks, and optimistic shortcuts.
+Every concern needs consequence, severity, and a concrete fix.
+Do not rewrite the work. Maximum seven concerns.
+"""

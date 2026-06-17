@@ -1,0 +1,7 @@
+interface:
+  display_name: "Product UX Review"
+  short_description: "Workflow-first UX and product critique"
+  brand_color: "#0891B2"
+  default_prompt: "Use $product-ux-review to audit this workflow and produce implementation-ready UX recommendations."
+policy:
+  allow_implicit_invocation: true

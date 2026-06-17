@@ -1,0 +1,9 @@
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Run bounded online research. Prefer official docs, primary repos, papers, and reputable sources.
+Return claim/evidence tables with links, dates, confidence, and open questions.
+Keep raw source text out of the final answer unless a short quote is necessary.
+"""

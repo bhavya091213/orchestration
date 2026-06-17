@@ -1,0 +1,7 @@
+interface:
+  display_name: "Obsidian Bases"
+  short_description: "Create and edit Obsidian Base views"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $obsidian-bases to create or edit an Obsidian Base."
+policy:
+  allow_implicit_invocation: true

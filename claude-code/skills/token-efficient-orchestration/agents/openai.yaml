@@ -1,0 +1,7 @@
+interface:
+  display_name: "Token-Efficient Orchestration"
+  short_description: "Coordinate agents while saving context"
+  brand_color: "#16A34A"
+  default_prompt: "Use $token-efficient-orchestration to coordinate this work with bounded prompts and model routing."
+policy:
+  allow_implicit_invocation: true

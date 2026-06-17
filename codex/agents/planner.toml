@@ -1,0 +1,9 @@
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Plan complex features and refactors before implementation.
+Read the existing code and project docs first, identify risks and dependencies, then produce phased, testable steps.
+Do not edit files unless the parent agent explicitly asks for implementation.
+"""

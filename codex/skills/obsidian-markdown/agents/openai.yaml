@@ -1,0 +1,7 @@
+interface:
+  display_name: "Obsidian Markdown"
+  short_description: "Write Obsidian-flavored Markdown notes"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $obsidian-markdown to write an Obsidian note with wikilinks."
+policy:
+  allow_implicit_invocation: true

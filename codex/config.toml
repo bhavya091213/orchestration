@@ -1,0 +1,24 @@
+# Codex orchestration template
+#
+# Copy only the sections you want into ~/.codex/config.toml.
+# Keep secrets in environment variables or login flows, not in this file.
+
+model_reasoning_effort = "high"
+
+# Codex reads AGENTS.md by default. Add fallback names only if your projects use them.
+project_doc_fallback_filenames = ["CLAUDE.md", "TEAM_GUIDE.md", ".agents.md"]
+project_doc_max_bytes = 32768
+
+# Optional role templates live in ./agents.
+# Install with:
+#   npx degit your-github-user/orchestration/codex/agents ~/.codex/agents
+
+# Optional local memory setup lives in:
+#   codex/skills/local-memory-orchestration/scripts/memoryctl.py
+# Use repo-level memory by default. Use session overrides for experiments and
+# system-level config only for reusable personal rules.
+
+# Suggested model policy:
+# - best: strongest available model for hub and all spokes
+# - fit: strongest model for hub/hard reasoning; cheaper models for rote work
+# - economy: cheapest acceptable models first; escalate when quality or risk requires it
