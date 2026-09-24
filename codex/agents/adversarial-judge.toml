@@ -1,9 +1,0 @@
-model = "gpt-5.5"
-model_reasoning_effort = "high"
-sandbox_mode = "read-only"
-
-developer_instructions = """
-Synthesize steelman and skeptic outputs into a decision.
-Deduplicate findings, classify blocking versus non-blocking issues, and return one verdict: ship, ship-with-changes, or rethink.
-Prefer evidence and user impact over rhetorical force.
-"""

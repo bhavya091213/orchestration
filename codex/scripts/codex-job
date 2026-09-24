@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+runtime="${CODEX_COMPANION_ROOT:-${CODEX_HOME:-$HOME/.codex}/scripts/codex-companion-runtime}"
+script="$runtime/scripts/codex-companion.mjs"
+
+if [[ ! -f "$script" ]]; then
+  echo "Codex companion runtime not found at: $script" >&2
+  exit 1
+fi
+
+exec node "$script" "$@"

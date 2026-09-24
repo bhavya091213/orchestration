@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: codex-prompt <recipe-name|recipe-path> [arguments...]" >&2
+  echo "Example: codex-prompt build-fix" >&2
+  echo "Example: codex-prompt tdd 'add liquidity score tests'" >&2
+  exit 2
+fi
+
+recipe="$1"
+shift || true
+
+codex_home="${CODEX_HOME:-$HOME/.codex}"
+if [[ -f "$recipe" ]]; then
+  recipe_file="$recipe"
+  recipe_name="$(basename "$recipe_file" .md)"
+elif [[ -f "$codex_home/prompts/codex-commands/$recipe.md" ]]; then
+  recipe_file="$codex_home/prompts/codex-commands/$recipe.md"
+  recipe_name="$recipe"
+elif [[ -f "$codex_home/prompts/openai-codex-plugin/commands/$recipe.md" ]]; then
+  recipe_file="$codex_home/prompts/openai-codex-plugin/commands/$recipe.md"
+  recipe_name="$recipe"
+else
+  echo "Unknown Codex prompt recipe: $recipe" >&2
+  echo "Looked in:" >&2
+  echo "  $codex_home/prompts/codex-commands/$recipe.md" >&2
+  echo "  $codex_home/prompts/openai-codex-plugin/commands/$recipe.md" >&2
+  exit 1
+fi
+
+{
+  printf '# Codex Prompt Recipe: %s\n\n' "$recipe_name"
+  cat "$recipe_file"
+  printf '\n\n## User Arguments\n\n'
+  if [[ $# -gt 0 ]]; then
+    printf '%s\n' "$*"
+  else
+    printf 'No explicit arguments supplied.\n'
+  fi
+  printf '\n\n## Execution Notes\n\n'
+  printf 'Run from current working directory: `%s`.\n' "$PWD"
+  printf 'Use Codex-native tools and commands. Do not assume Claude slash commands, Claude hooks, or Claude tool names exist.\n'
+} | codex exec --cd "$PWD" -

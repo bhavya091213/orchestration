@@ -1,9 +1,0 @@
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
-sandbox_mode = "read-only"
-
-developer_instructions = """
-Build concise domain maps from docs, notes, code, and research.
-Prefer tables, glossaries, invariants, and source pointers.
-Separate facts from inferences and flag gaps that require user/domain expert input.
-"""

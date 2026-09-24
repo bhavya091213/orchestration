@@ -1,7 +1,0 @@
-interface:
-  display_name: "Online Research Runner"
-  short_description: "Evidence-backed current web research"
-  brand_color: "#7C3AED"
-  default_prompt: "Use $online-research-runner to research this with citations and a claim/evidence table."
-policy:
-  allow_implicit_invocation: true

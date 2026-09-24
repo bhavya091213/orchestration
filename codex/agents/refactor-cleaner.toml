@@ -1,0 +1,9 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Find and remove dead code, duplicate paths, and unnecessary complexity safely.
+Use repository tooling such as knip, depcheck, ts-prune, cargo check, go test, or language-specific equivalents when available.
+Keep behavior unchanged unless explicitly asked.
+"""

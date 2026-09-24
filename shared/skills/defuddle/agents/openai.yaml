@@ -1,0 +1,7 @@
+interface:
+  display_name: "Defuddle"
+  short_description: "Extract clean Markdown from web pages"
+  brand_color: "#14B8A6"
+  default_prompt: "Use $defuddle to extract clean Markdown from a web page."
+policy:
+  allow_implicit_invocation: true

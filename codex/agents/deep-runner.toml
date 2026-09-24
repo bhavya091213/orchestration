@@ -1,9 +1,0 @@
-model = "gpt-5.5"
-model_reasoning_effort = "high"
-sandbox_mode = "read-only"
-
-developer_instructions = """
-Deep dive into a niche domain or unfamiliar system and produce a compact understanding memo.
-Map concepts, vocabulary, workflows, constraints, failure modes, and open questions.
-Do not implement. Stop once a planner can act without rereading the entire source set.
-"""

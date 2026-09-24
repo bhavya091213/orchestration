@@ -1,0 +1,121 @@
+{
+  "_comment": "Example Claude Code user settings. Copy to ~/.claude/settings.json and edit. ANTHROPIC_BASE_URL points at a local headroom proxy on 127.0.0.1:8787 - remove the env block if you are not running it. The permissions.allow list is a starting point; Claude Code appends to it as you approve tools.",
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8787",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit --project tsconfig.json)",
+      "Bash(sort -t'|' -k2,3)",
+      "Bash(npx vite build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run build)",
+      "Bash(export PATH=\"/opt/homebrew/opt/postgresql@16/bin:$PATH\")",
+      "Bash(createdb arbiter)",
+      "Bash(npx turbo:*)",
+      "Bash(node -e \":*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm ls:*)",
+      "Bash(npx knip:*)",
+      "Bash(aws secretsmanager:*)",
+      "Bash(aws rds:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(npx ts-prune:*)",
+      "Bash(node scripts/contract-check.mjs)",
+      "Bash(brew services:*)",
+      "Read(//opt/homebrew/var/postgresql@16/**)",
+      "Bash(/opt/homebrew/opt/postgresql@16/bin/pg_isready)",
+      "Read(//opt/homebrew/var/log/**)",
+      "Bash(uv run:*)",
+      "WebFetch(domain:aws.amazon.com)",
+      "Bash(git add:*)",
+      "Bash(grep -E \"routes.ts|\\\\.ts$\")",
+      "WebFetch(domain:cesium.com)",
+      "WebFetch(domain:community.cesium.com)",
+      "WebFetch(domain:sandcastle.cesium.com)",
+      "WebFetch(domain:naturalintelligence.github.io)",
+      "Bash(lsof -ti:3000,3001,3099)",
+      "WebFetch(domain:www.jcs.mil)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx remotion:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(mkdir -p v4_final_2026-03-30)",
+      "Bash(cp -r v3_final_2026-03-30/* v4_final_2026-03-30/)",
+      "Bash(SKIP_ENV_VALIDATION=1 npx tsx -e \":*)",
+      "Bash(aws ecs:*)",
+      "Bash(node -e ' *)",
+      "Bash(bash scripts/db-tunnel.sh 55432)"
+    ]
+  },
+  "model": "claude-fable-5-1[1m]",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/bin/headroom init hook ensure --profile init-user --marker headroom-init-claude",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.local/bin/headroom init hook ensure --profile init-user --marker headroom-init-claude",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": true,
+    "deep-project@piercelamb-plugins": true,
+    "deep-implement@piercelamb-plugins": true,
+    "deep-plan@piercelamb-plugins": true,
+    "codex@openai-codex": true,
+    "headroom@headroom-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "piercelamb-plugins": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/piercelamb/deep-plan.git"
+      }
+    },
+    "everything-claude-code": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/affaan-m/everything-claude-code.git"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "headroom-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "chopratejas/headroom"
+      }
+    }
+  },
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true
+}

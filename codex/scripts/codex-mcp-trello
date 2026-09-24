@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+keychain_read() {
+  local service="$1"
+  security find-generic-password -a "${USER}" -s "${service}" -w 2>/dev/null || true
+}
+
+if [[ -z "${TRELLO_API_KEY:-}" ]]; then
+  TRELLO_API_KEY="$(keychain_read codex-mcp-trello-api-key)"
+  export TRELLO_API_KEY
+fi
+
+if [[ -z "${TRELLO_TOKEN:-}" ]]; then
+  TRELLO_TOKEN="$(keychain_read codex-mcp-trello-token)"
+  export TRELLO_TOKEN
+fi
+
+if [[ -z "${TRELLO_API_KEY:-}" || -z "${TRELLO_TOKEN:-}" ]]; then
+  echo "Trello MCP requires TRELLO_API_KEY and TRELLO_TOKEN in env or macOS Keychain." >&2
+  exit 1
+fi
+
+exec npx -y atlassian-trello-mcp

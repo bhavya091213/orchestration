@@ -1,6 +1,6 @@
 # Research Notes
 
-Generated: 2026-06-16
+Sources consulted when this repo was first designed (2026-06-16) and kept as background reading. The design decisions from that era were superseded by the 2026-09-24 rebuild described in [orchestration-workflow.md](orchestration-workflow.md) and [layout-and-sync.md](layout-and-sync.md).
 
 ## Sources Checked
 
@@ -13,15 +13,3 @@ Generated: 2026-06-16
 - OpenAI Codex `AGENTS.md` documentation: Codex layers global and project instructions and respects size limits. <https://developers.openai.com/codex/guides/agents-md>
 - `notmanas/claude-code-skills`: example repository structure, `degit` install flow, and skill style using concise `SKILL.md` plus references. <https://github.com/notmanas/claude-code-skills>
 
-## Design Decisions Applied
-
-- Use hub-and-spoke orchestration instead of peer-to-peer agent chat.
-- Keep the hub responsible for planning, user gates, model policy, state, and synthesis.
-- Give spokes bounded prompts and require concise evidence-based outputs.
-- Add model policy as a user decision: `best`, `fit`, or `economy`.
-- Add local memory configuration with repo, system, and session scopes.
-- Use an Obsidian vault as the human-readable memory source and a local SQLite/vector retrieval layer as the index.
-- Keep SQLite FTS5 available even when vector retrieval is configured, because exact identifiers matter in codebases.
-- Add deep-understanding and research skills for non-code work.
-- Add adversarial pair review with separated steelman and skeptic roles.
-- Keep detailed methods in `references/` so normal invocations do not load everything.

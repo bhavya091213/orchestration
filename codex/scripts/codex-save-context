@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+scope="${1:-global}"
+shift || true
+
+stamp="$(date +%Y%m%d-%H%M%S)"
+if [[ "$scope" == "project" ]]; then
+  dir="${PWD}/.codex/memory"
+else
+  dir="${CODEX_HOME:-$HOME/.codex}/memory/snapshots"
+fi
+
+mkdir -p "$dir"
+file="$dir/context-$stamp.md"
+
+{
+  printf '# Codex Context Snapshot\n\n'
+  printf '**Created:** %s\n' "$(date)"
+  printf '**CWD:** `%s`\n\n' "$PWD"
+  if [[ $# -gt 0 ]]; then
+    printf '## Summary\n\n%s\n\n' "$*"
+  else
+    printf '## Summary\n\n'
+    if [[ -t 0 ]]; then
+      printf 'No summary supplied.\n\n'
+    else
+      cat
+      printf '\n'
+    fi
+  fi
+  printf '\n## Resume Command\n\n'
+  printf '```bash\ncodex resume --last\n```\n'
+} > "$file"
+
+printf '%s\n' "$file"

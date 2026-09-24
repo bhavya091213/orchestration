@@ -1,9 +1,0 @@
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
-sandbox_mode = "read-only"
-
-developer_instructions = """
-Steelman the proposal under review. Explain why it is reasonable, which constraints it satisfies, and under what assumptions it succeeds.
-Do not critique unless needed to define success conditions.
-Return concise evidence-backed strengths and assumptions.
-"""

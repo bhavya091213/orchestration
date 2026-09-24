@@ -1,0 +1,220 @@
+# Example Codex CLI config. Copy to ~/.codex/config.toml and edit to taste.
+#
+# Machine-specific state has been stripped from this example: [projects.*] trust
+# tables, [hooks.state.*] trusted hashes, and the `notify` hook are all written by
+# Codex itself on first use -- do not copy them between machines.
+#
+# `~` in command paths below is expanded by the installer/sync-agents, not by Codex.
+# If you hand-edit this file, use absolute paths for `command = ...` values.
+
+# Default model. gpt-6-astra is in the local catalog but the server rejects it for
+# ChatGPT-account auth ("not supported when using Codex with a ChatGPT account").
+# To use astra: sign in with an OpenAI API key (codex login --with-api-key), then
+# swap the two lines below. gpt-5.6-sol matches shared/RULES.md section C and
+# the per-role model in codex/agents/*.toml.
+model = "gpt-5.6-sol"
+# model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+personality = "pragmatic"
+check_for_update_on_startup = true
+
+# Global runtime defaults migrated from the Claude/ECC Codex baseline.
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "live"
+approvals_reviewer = "user"
+
+# --- Headroom init provider ---
+model_provider = "headroom"
+openai_base_url = "http://127.0.0.1:8787/v1"
+
+[model_providers.headroom]
+name = "Headroom init proxy"
+base_url = "http://127.0.0.1:8787/v1"
+supports_websockets = true
+requires_openai_auth = true
+# --- end Headroom init provider ---
+
+[mcp_servers.github]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+
+[mcp_servers.exa]
+url = "https://mcp.exa.ai/mcp"
+
+[mcp_servers.memory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest", "--extension"]
+
+[mcp_servers.sequential-thinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+[mcp_servers.trello]
+command = "~/.codex/scripts/codex-mcp-trello"
+
+# Optional API-backed MCP servers. Enable after exporting the needed credentials.
+# [mcp_servers.firecrawl]
+# command = "npx"
+# args = ["-y", "firecrawl-mcp"]
+#
+# [mcp_servers.fal-ai]
+# command = "npx"
+# args = ["-y", "fal-ai-mcp-server"]
+#
+# [mcp_servers.supabase]
+# command = "npx"
+# args = ["-y", "@supabase/mcp-server-supabase@latest", "--project-ref=YOUR_PROJECT_REF"]
+#
+# [mcp_servers.browserbase]
+# command = "npx"
+# args = ["-y", "@browserbasehq/mcp-server-browserbase"]
+
+[features]
+
+# --- Headroom init features ---
+hooks = true
+# --- end Headroom init features ---
+multi_agent = true
+terminal_resize_reflow = true
+
+[profiles.strict]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+web_search = "cached"
+
+[profiles.yolo]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+web_search = "live"
+
+[profiles.research]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+web_search = "live"
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.explorer]
+description = "Read-only codebase explorer for gathering evidence before changes are proposed."
+config_file = "agents/explorer.toml"
+
+[agents.reviewer]
+description = "Owner-style reviewer focused on correctness, security, regressions, and missing tests."
+config_file = "agents/reviewer.toml"
+
+[agents.docs_researcher]
+description = "Documentation specialist that verifies APIs, framework behavior, and release notes."
+config_file = "agents/docs-researcher.toml"
+
+[agents.planner]
+description = "Implementation planner for complex features, refactors, risks, and phased task breakdowns."
+config_file = "agents/planner.toml"
+
+[agents.architect]
+description = "Architecture reviewer for system design, scalability, integration boundaries, and tradeoffs."
+config_file = "agents/architect.toml"
+
+[agents.security_reviewer]
+description = "Security reviewer for secrets, injection, auth, SSRF, unsafe crypto, dependency, and data leakage risks."
+config_file = "agents/security-reviewer.toml"
+
+[agents.tdd_guide]
+description = "TDD implementation role for tests-first feature work and behavior-focused bug fixes."
+config_file = "agents/tdd-guide.toml"
+
+[agents.build_resolver]
+description = "Build, typecheck, lint, and dependency error resolver with minimal diffs."
+config_file = "agents/build-resolver.toml"
+
+[agents.e2e_runner]
+description = "End-to-end testing role for Playwright journeys, artifacts, and flake triage."
+config_file = "agents/e2e-runner.toml"
+
+[agents.refactor_cleaner]
+description = "Dead-code cleanup and consolidation role that preserves behavior."
+config_file = "agents/refactor-cleaner.toml"
+
+[agents.markdown_writer]
+description = "Lower-cost Markdown, Obsidian note, prompt recipe, AGENTS.md, and SKILL.md writer."
+config_file = "agents/markdown-writer.toml"
+
+[notice.model_migrations]
+"gpt-5.2" = "gpt-5.2-codex"
+"gpt-5.1-codex-max" = "gpt-5.2-codex"
+"gpt-5.2-codex" = "gpt-5.3-codex"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+gpt-6-astra = 1
+
+[plugins."google-drive@openai-curated"]
+enabled = true
+
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."computer-use@openai-bundled"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = true
+
+[desktop]
+followUpQueueMode = "steer"
+conversationDetailMode = "STEPS_COMMANDS"
+ambient-suggestions-enabled = true
+
+[marketplaces.openai-bundled]
+source_type = "local"
+source = "~/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+source_type = "local"
+source = "~/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+# --- Headroom MCP server ---
+[mcp_servers.headroom]
+command = "~/.local/bin/headroom"
+args = ["mcp", "serve"]
+
+[mcp_servers.computer-use]
+command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+args = ["mcp"]
+cwd = "."
+enabled = false
+# --- end Headroom MCP server ---

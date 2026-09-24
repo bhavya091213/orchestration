@@ -1,0 +1,402 @@
+#!/usr/bin/env python3
+"""sync-agents - render ~/.agents/mcp-servers.json and ~/.agents/RULES.md into
+Claude Code and Codex CLI.
+
+Source of truth:
+  ~/.agents/mcp-servers.json   MCP servers (both tools)
+  ~/.agents/RULES.md           shared rules text (Codex AGENTS.md block)
+
+Subcommands: mcp (default), rules, status.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tomllib
+
+HOME = os.path.expanduser("~")
+MCP_JSON = os.path.join(HOME, ".agents", "mcp-servers.json")
+RULES_MD = os.path.join(HOME, ".agents", "RULES.md")
+CODEX_TOML = os.path.join(HOME, ".codex", "config.toml")
+CODEX_TOML_BAK = CODEX_TOML + ".bak-sync"
+CODEX_AGENTS = os.path.join(HOME, ".codex", "AGENTS.md")
+CLAUDE_JSON = os.path.join(HOME, ".claude.json")
+
+BEGIN_MARK = "<!-- BEGIN SHARED RULES (synced from ~/.agents/RULES.md) -->"
+END_MARK = "<!-- END SHARED RULES -->"
+
+TABLE_HEADER_RE = re.compile(r"^\[")
+
+
+# --------------------------------------------------------------------------
+# helpers
+# --------------------------------------------------------------------------
+
+def die(msg: str, code: int = 1) -> None:
+    print(f"error: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def load_servers() -> dict:
+    if not os.path.exists(MCP_JSON):
+        die(f"missing {MCP_JSON}")
+    with open(MCP_JSON, "r", encoding="utf-8") as fh:
+        data = json.load(fh)
+    servers = data.get("servers")
+    if not isinstance(servers, dict):
+        die(f"{MCP_JSON}: expected an object under 'servers'")
+    for name, spec in servers.items():
+        stype = spec.get("type")
+        if stype not in ("stdio", "http"):
+            die(f"{name}: type must be 'stdio' or 'http'")
+        if stype == "stdio" and not spec.get("command"):
+            die(f"{name}: stdio server needs a 'command'")
+        if stype == "http" and not spec.get("url"):
+            die(f"{name}: http server needs a 'url'")
+        if not isinstance(spec.get("targets", []), list):
+            die(f"{name}: 'targets' must be a list")
+    return servers
+
+
+def targets_of(spec: dict) -> list:
+    return spec.get("targets") or ["claude", "codex"]
+
+
+def expand_path(value: str) -> str:
+    """Expand a leading ~ and any $VAR / ${VAR} so mcp-servers.json can stay portable.
+
+    Neither Claude Code nor Codex expands these in a server `command`, so we resolve
+    them here before rendering/comparing.
+    """
+    if not isinstance(value, str):
+        return value
+    return os.path.expanduser(os.path.expandvars(value))
+
+
+def normalize(spec: dict) -> dict:
+    """Tool-neutral comparable form."""
+    if spec.get("type") == "http" or ("url" in spec and not spec.get("command")):
+        return {"url": spec["url"]}
+    return {
+        "command": expand_path(spec.get("command")),
+        "args": list(spec.get("args") or []),
+        "env": dict(spec.get("env") or {}),
+    }
+
+
+def toml_str(value: str) -> str:
+    return json.dumps(value)  # JSON string escaping is valid TOML basic-string escaping
+
+
+def toml_key(name: str) -> str:
+    return name if re.fullmatch(r"[A-Za-z0-9_-]+", name) else toml_str(name)
+
+
+def render_body(spec: dict) -> list:
+    """Lines making up the body of a [mcp_servers.<name>] table."""
+    lines = []
+    norm = normalize(spec)
+    if "url" in norm:
+        lines.append(f"url = {toml_str(norm['url'])}\n")
+        return lines
+    lines.append(f"command = {toml_str(norm['command'])}\n")
+    if norm["args"]:
+        rendered = ", ".join(toml_str(a) for a in norm["args"])
+        lines.append(f"args = [{rendered}]\n")
+    if norm["env"]:
+        pairs = ", ".join(f"{toml_key(k)} = {toml_str(v)}" for k, v in norm["env"].items())
+        lines.append(f"env = {{ {pairs} }}\n")
+    return lines
+
+
+# --------------------------------------------------------------------------
+# codex config.toml (text-based edit, tomllib for reading/validation only)
+# --------------------------------------------------------------------------
+
+def read_codex_tables() -> dict:
+    if not os.path.exists(CODEX_TOML):
+        return {}
+    with open(CODEX_TOML, "rb") as fh:
+        return tomllib.load(fh).get("mcp_servers", {}) or {}
+
+
+def find_table(lines: list, name: str):
+    """Return (header_idx, body_start, body_end, tail_start) or None.
+
+    body spans [body_start, tail_start); tail spans [tail_start, body_end) and
+    holds trailing blank/comment lines that belong to whatever follows (e.g. a
+    managed '# --- end ... ---' marker), which are preserved verbatim.
+    """
+    wanted = {f"[mcp_servers.{name}]", f"[mcp_servers.{toml_str(name)}]"}
+    for i, line in enumerate(lines):
+        if line.strip() in wanted:
+            j = i + 1
+            while j < len(lines) and not TABLE_HEADER_RE.match(lines[j]):
+                j += 1
+            tail = j
+            while tail - 1 > i:
+                s = lines[tail - 1].strip()
+                if s == "" or s.startswith("#"):
+                    tail -= 1
+                else:
+                    break
+            return i, i + 1, j, tail
+    return None
+
+
+def sync_codex(servers: dict, dry_run: bool, prune: bool) -> list:
+    plan = []
+    if not os.path.exists(CODEX_TOML):
+        die(f"missing {CODEX_TOML}")
+    with open(CODEX_TOML, "r", encoding="utf-8") as fh:
+        lines = fh.readlines()
+    current = read_codex_tables()
+
+    wanted = {n: s for n, s in servers.items() if "codex" in targets_of(s)}
+
+    for name, spec in wanted.items():
+        desired = normalize(spec)
+        found = find_table(lines, name)
+        if found is None:
+            plan.append(("codex", "add", name))
+            if not lines or lines[-1].endswith("\n"):
+                lines.append("\n")
+            else:
+                lines.append("\n\n")
+            lines.append(f"[mcp_servers.{toml_key(name)}]\n")
+            lines.extend(render_body(spec))
+            continue
+        actual = normalize(current.get(name, {}))
+        if actual == desired:
+            plan.append(("codex", "ok", name))
+            continue
+        plan.append(("codex", "update", name))
+        _hdr, body_start, _end, tail = found
+        lines[body_start:tail] = render_body(spec)
+
+    if prune:
+        for name in list(current.keys()):
+            if name in wanted:
+                continue
+            found = find_table(lines, name)
+            if found is None:
+                continue
+            plan.append(("codex", "remove", name))
+            hdr, _bs, _end, tail = found
+            del lines[hdr:tail]
+
+    changed = [p for p in plan if p[1] in ("add", "update", "remove")]
+    if changed and not dry_run:
+        shutil.copy2(CODEX_TOML, CODEX_TOML_BAK)
+        with open(CODEX_TOML, "w", encoding="utf-8") as fh:
+            fh.writelines(lines)
+        try:
+            with open(CODEX_TOML, "rb") as fh:
+                tomllib.load(fh)
+        except Exception as exc:  # noqa: BLE001
+            shutil.copy2(CODEX_TOML_BAK, CODEX_TOML)
+            die(f"config.toml invalid after write ({exc}); restored from {CODEX_TOML_BAK}", 2)
+    elif changed and dry_run:
+        # validate the would-be result without touching the file
+        try:
+            tomllib.loads("".join(lines))
+        except Exception as exc:  # noqa: BLE001
+            die(f"planned config.toml would be invalid TOML: {exc}", 2)
+    return plan
+
+
+# --------------------------------------------------------------------------
+# claude (CLI only - never edit ~/.claude.json directly)
+# --------------------------------------------------------------------------
+
+def claude_list_names() -> set:
+    try:
+        out = subprocess.run(
+            ["claude", "mcp", "list"], capture_output=True, text=True, timeout=180
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        print(f"warn: could not run `claude mcp list` ({exc})", file=sys.stderr)
+        return set()
+    names = set()
+    for line in out.stdout.splitlines():
+        line = line.rstrip()
+        if not line or ":" not in line:
+            continue
+        if line.startswith(("Checking", "No MCP", "Available", " ")):
+            continue
+        name = line.split(":", 1)[0].strip()
+        if name:
+            names.add(name)
+    return names
+
+
+def claude_user_scope_names() -> set:
+    """Names in ~/.claude.json user scope - read-only, used to scope --prune."""
+    try:
+        with open(CLAUDE_JSON, "r", encoding="utf-8") as fh:
+            return set((json.load(fh).get("mcpServers") or {}).keys())
+    except Exception:  # noqa: BLE001
+        return set()
+
+
+def claude_payload(spec: dict) -> str:
+    norm = normalize(spec)
+    if "url" in norm:
+        payload = {"type": "http", "url": norm["url"]}
+    else:
+        payload = {"type": "stdio", "command": norm["command"], "args": norm["args"]}
+        payload["env"] = norm["env"]
+    return json.dumps(payload)
+
+
+def sync_claude(servers: dict, dry_run: bool, prune: bool) -> list:
+    plan = []
+    present = claude_list_names()
+    wanted = {n: s for n, s in servers.items() if "claude" in targets_of(s)}
+
+    for name, spec in wanted.items():
+        if name in present:
+            plan.append(("claude", "ok", name))
+            continue
+        plan.append(("claude", "add", name))
+        if dry_run:
+            continue
+        cmd = ["claude", "mcp", "add-json", name, claude_payload(spec), "-s", "user"]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0:
+            print(
+                f"warn: `claude mcp add-json {name}` failed: "
+                f"{(res.stderr or res.stdout).strip()}",
+                file=sys.stderr,
+            )
+            plan[-1] = ("claude", "FAILED", name)
+
+    if prune:
+        for name in sorted(claude_user_scope_names() - set(wanted)):
+            plan.append(("claude", "remove", name))
+            if dry_run:
+                continue
+            res = subprocess.run(
+                ["claude", "mcp", "remove", name, "-s", "user"],
+                capture_output=True, text=True,
+            )
+            if res.returncode != 0:
+                print(
+                    f"warn: `claude mcp remove {name}` failed: "
+                    f"{(res.stderr or res.stdout).strip()}",
+                    file=sys.stderr,
+                )
+    return plan
+
+
+# --------------------------------------------------------------------------
+# subcommands
+# --------------------------------------------------------------------------
+
+def cmd_mcp(args) -> int:
+    servers = load_servers()
+    plan = sync_codex(servers, args.dry_run, args.prune)
+    plan += sync_claude(servers, args.dry_run, args.prune)
+    label = "PLAN (dry run)" if args.dry_run else "APPLIED"
+    print(f"== mcp {label} ==")
+    for tool, action, name in plan:
+        if action == "ok":
+            print(f"  {tool:<7} ok        {name}")
+        else:
+            print(f"  {tool:<7} {action.upper():<9} {name}")
+    if not any(a != "ok" for _t, a, _n in plan):
+        print("  (everything already in sync)")
+    return 1 if any(a == "FAILED" for _t, a, _n in plan) else 0
+
+
+def cmd_rules(args) -> int:
+    if not os.path.exists(RULES_MD):
+        print(f"error: {RULES_MD} does not exist yet", file=sys.stderr)
+        return 1
+    with open(RULES_MD, "r", encoding="utf-8") as fh:
+        rules = fh.read().rstrip("\n")
+    block = f"{BEGIN_MARK}\n{rules}\n{END_MARK}\n"
+    existing = ""
+    if os.path.exists(CODEX_AGENTS):
+        with open(CODEX_AGENTS, "r", encoding="utf-8") as fh:
+            existing = fh.read()
+
+    if BEGIN_MARK in existing and END_MARK in existing:
+        start = existing.index(BEGIN_MARK)
+        end = existing.index(END_MARK) + len(END_MARK) + 1
+        new = existing[:start] + block + existing[end:]
+        action = "replace block"
+    else:
+        sep = "" if existing.endswith("\n\n") or not existing else ("\n" if existing.endswith("\n") else "\n\n")
+        new = existing + sep + block
+        action = "append block (markers absent)"
+
+    if new == existing:
+        print(f"== rules == already in sync ({CODEX_AGENTS})")
+        return 0
+    if args.dry_run:
+        print(f"== rules PLAN (dry run) == {action} in {CODEX_AGENTS} "
+              f"({len(rules.splitlines())} lines from RULES.md)")
+        return 0
+    with open(CODEX_AGENTS, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print(f"== rules == {action} in {CODEX_AGENTS}")
+    return 0
+
+
+def cmd_status(_args) -> int:
+    servers = load_servers()
+    codex_present = set(read_codex_tables().keys())
+    claude_present = claude_list_names()
+    width = max([len(n) for n in servers] + [6])
+    print(f"{'server'.ljust(width)}  claude  codex   targets")
+    print(f"{'-' * width}  ------  ------  -------")
+    for name in sorted(servers):
+        tg = ",".join(targets_of(servers[name]))
+        c = "yes" if name in claude_present else "no"
+        x = "yes" if name in codex_present else "no"
+        print(f"{name.ljust(width)}  {c:<6}  {x:<6}  {tg}")
+    extra_codex = codex_present - set(servers)
+    extra_claude = claude_user_scope_names() - set(servers)
+    if extra_codex:
+        print(f"\nin codex but not in mcp-servers.json: {', '.join(sorted(extra_codex))}")
+    if extra_claude:
+        print(f"in claude user scope but not in mcp-servers.json: {', '.join(sorted(extra_claude))}")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="sync-agents",
+        description="Render ~/.agents config into Claude Code and Codex CLI.",
+    )
+    sub = parser.add_subparsers(dest="cmd")
+
+    p_mcp = sub.add_parser("mcp", help="sync MCP servers (default)")
+    p_mcp.add_argument("--dry-run", action="store_true")
+    p_mcp.add_argument("--prune", action="store_true",
+                       help="remove servers not present in mcp-servers.json")
+    p_mcp.set_defaults(func=cmd_mcp)
+
+    p_rules = sub.add_parser("rules", help="sync RULES.md into ~/.codex/AGENTS.md")
+    p_rules.add_argument("--dry-run", action="store_true")
+    p_rules.set_defaults(func=cmd_rules)
+
+    p_status = sub.add_parser("status", help="show which servers each tool has")
+    p_status.set_defaults(func=cmd_status)
+
+    argv = sys.argv[1:]
+    if not argv or argv[0].startswith("-"):
+        argv = ["mcp"] + argv
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

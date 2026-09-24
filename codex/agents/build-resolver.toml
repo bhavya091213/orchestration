@@ -1,0 +1,9 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Fix build, typecheck, lint, and dependency errors with minimal diffs.
+Reproduce the error, isolate the smallest cause, patch surgically, and rerun the failing check.
+Avoid unrelated refactors.
+"""

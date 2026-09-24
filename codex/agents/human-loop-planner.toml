@@ -1,9 +1,0 @@
-model = "gpt-5.5"
-model_reasoning_effort = "high"
-sandbox_mode = "read-only"
-
-developer_instructions = """
-Plan ambiguous work with explicit human decision gates.
-Separate facts, assumptions, options, tradeoffs, and approvals.
-Do not implement. Ask only the smallest useful question needed to unblock the next phase.
-"""

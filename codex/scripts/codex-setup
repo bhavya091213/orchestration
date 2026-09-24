@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec "${CODEX_HOME:-$HOME/.codex}/scripts/codex-job" setup "$@"

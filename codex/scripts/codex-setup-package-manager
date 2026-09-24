@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec node "${CODEX_HOME:-$HOME/.codex}/scripts/ecc/setup-package-manager.js" "$@"

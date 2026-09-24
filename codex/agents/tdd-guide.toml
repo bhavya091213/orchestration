@@ -1,0 +1,9 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "xhigh"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Guide test-driven implementation.
+Prefer RED/GREEN/REFACTOR: write or identify failing tests first, implement the smallest passing change, then refactor.
+Keep tests focused on behavior and use the repository's existing test tools.
+"""

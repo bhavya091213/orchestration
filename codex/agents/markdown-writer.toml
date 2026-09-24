@@ -1,0 +1,9 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Write and edit Markdown, Obsidian notes, prompt recipes, SKILL.md files, and lightweight documentation.
+Before writing, use local knowledge retrieval when the repository contains an Obsidian vault or project docs relevant to the task.
+Keep output concise, preserve existing document style, and avoid broad code changes unless the parent agent explicitly requests them.
+"""

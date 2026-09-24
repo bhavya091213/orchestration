@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Editors
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Logs & local state
+*.log
+.env
+.env.*
+!.env.example
+
+# Installer backups
+backups/
+
+# Learned skills are generated per-machine; keep the directory, not its contents
+claude-code/skills/learned/*
+!claude-code/skills/learned/.gitkeep
